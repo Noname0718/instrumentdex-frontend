@@ -1,6 +1,6 @@
 // src/pages/InstrumentDetailPage.jsx
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchInstrumentDetail } from "../api/instrumentApi";
 import { fetchSongsByInstrument } from "../api/songApi";
 
@@ -202,8 +202,13 @@ function PracticeSongSection({ instrumentId }) {
                             key={song.id}
                             className="border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white"
                         >
-                            <div>
-                                <p className="font-medium">{song.title}</p>
+                            <div className="flex-1">
+                                <Link
+                                    to={`/songs/${song.id}`}
+                                    className="font-medium text-blue-600 hover:underline"
+                                >
+                                    {song.title}
+                                </Link>
                                 <p className="text-xs text-gray-500">
                                     {song.artist} · 난이도 {song.level}
                                 </p>
