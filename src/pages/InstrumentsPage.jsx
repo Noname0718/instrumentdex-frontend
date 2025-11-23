@@ -1,11 +1,11 @@
 // src/pages/InstrumentsPage.jsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInstruments } from "../api/instrumentApi";
 import { Link } from "react-router-dom";
 
 const FAMILY_OPTIONS = [
-    { value: "", label: "전체" },
+    { value: "ALL", label: "전체" },
     { value: "STRING", label: "현악기 (STRING)" },
     { value: "KEYBOARD", label: "건반악기 (KEYBOARD)" },
     { value: "WOODWIND", label: "목관악기 (WOODWIND)" },
@@ -14,7 +14,7 @@ const FAMILY_OPTIONS = [
 ];
 
 const DIFFICULTY_OPTIONS = [
-    { value: "", label: "전체" },
+    { value: "ALL", label: "전체" },
     { value: "BEGINNER", label: "입문 (BEGINNER)" },
     { value: "EASY", label: "쉬움 (EASY)" },
     { value: "NORMAL", label: "보통 (NORMAL)" },
@@ -22,15 +22,28 @@ const DIFFICULTY_OPTIONS = [
 ];
 
 export default function InstrumentsPage() {
-    const [family, setFamily] = useState("");
-    const [difficulty, setDifficulty] = useState("");
+    const [family, setFamily] = useState("ALL");
+    const [difficulty, setDifficulty] = useState("ALL");
 
     const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-        queryKey: ["instruments", { family, difficulty }],
-        queryFn: () => fetchInstruments({ family, difficulty }),
+        queryKey: ["instruments"],
+        queryFn: () => fetchInstruments(),
     });
 
     const instruments = data || [];
+
+    const filteredInstruments = useMemo(() => {
+        return instruments.filter((instrument) => {
+            const familyMatch =
+                family === "ALL" || instrument.family === family;
+            const difficultyMatch =
+                difficulty === "ALL" || instrument.difficultyLevel === difficulty;
+            return familyMatch && difficultyMatch;
+        });
+    }, [instruments, family, difficulty]);
+
+    const appliedFilterCount =
+        (family !== "ALL" ? 1 : 0) + (difficulty !== "ALL" ? 1 : 0);
 
     return (
         <div className="p-6 space-y-6">
@@ -45,10 +58,11 @@ export default function InstrumentsPage() {
                         홈으로
                     </Link>
                 </div>
-                <span className="text-sm text-gray-500">
-                    총 {instruments.length}개 악기
-                    {isFetching && " (새로고침 중...)"}
-                </span>
+                <div className="text-sm text-gray-500">
+                    총 {filteredInstruments.length}개 악기
+                    {appliedFilterCount > 0 && " (필터 적용됨)"}
+                    {isFetching && " · 새로고침 중"}
+                </div>
             </div>
 
             {/* 필터 영역 */}
@@ -86,8 +100,8 @@ export default function InstrumentsPage() {
                 <button
                     type="button"
                     onClick={() => {
-                        setFamily("");
-                        setDifficulty("");
+                        setFamily("ALL");
+                        setDifficulty("ALL");
                     }}
                     className="ml-auto text-sm px-3 py-2 rounded-md border hover:bg-gray-50"
                 >
@@ -131,18 +145,18 @@ export default function InstrumentsPage() {
             )}
 
             {/* 빈 목록 상태 */}
-            {!isLoading && !isError && instruments.length === 0 && (
+            {!isLoading && !isError && filteredInstruments.length === 0 && (
                 <div className="border border-dashed rounded-lg p-6 text-center text-gray-500">
                     현재 조건에 맞는 악기가 없습니다.
                     <br />
-                    관리자 페이지에서 악기를 등록해 주세요.
+                    다른 조건을 선택하거나 관리자 페이지에서 악기를 등록해 주세요.
                 </div>
             )}
 
             {/* 정상 목록 */}
-            {!isLoading && !isError && instruments.length > 0 && (
+            {!isLoading && !isError && filteredInstruments.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {instruments.map((instrument) => (
+                    {filteredInstruments.map((instrument) => (
                         <Link
                             key={instrument.id}
                             to={`/instruments/${instrument.id}`}

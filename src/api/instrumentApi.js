@@ -2,7 +2,13 @@ import api from "./client";
 
 // 악기 리스트 조회
 export const fetchInstruments = async (params = {}) => {
-  const res = await api.get("/instruments", { params });
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ""
+    )
+  );
+
+  const res = await api.get("/instruments", { params: filteredParams });
   return res.data;
 };
 

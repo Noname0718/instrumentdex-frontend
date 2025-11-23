@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchInstrumentDetail } from "../api/instrumentApi";
-import { fetchSongsByInstrument } from "../api/songApi";
+import { fetchSongsByInstrument } from "../api/songs";
 
 export default function InstrumentDetailPage() {
     const { id } = useParams();
@@ -67,6 +67,14 @@ export default function InstrumentDetailPage() {
                         {instrument.nameEn && (
                             <p className="text-sm text-gray-500">{instrument.nameEn}</p>
                         )}
+                        <div className="mt-2">
+                            <Link
+                                to={`/songs?instrumentId=${instrument.id}`}
+                                className="inline-flex items-center text-xs px-3 py-1.5 rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50"
+                            >
+                                이 악기의 연습곡 전체 보기 →
+                            </Link>
+                        </div>
                     </div>
 
                     {/* 좌/우 레이아웃 */}
@@ -197,23 +205,25 @@ function PracticeSongSection({ instrumentId }) {
 
             {!isLoading && !isError && songs.length > 0 && (
                 <ul className="space-y-2">
-                    {songs.map((song) => (
-                        <li
-                            key={song.id}
-                            className="border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white"
-                        >
-                            <div className="flex-1">
-                                <Link
-                                    to={`/songs/${song.id}`}
-                                    className="font-medium text-blue-600 hover:underline"
-                                >
-                                    {song.title}
-                                </Link>
-                                <p className="text-xs text-gray-500">
-                                    {song.artist} · 난이도 {song.level}
-                                </p>
-                                {song.tags && song.tags.length > 0 && (
-                                    <div className="mt-1 flex flex-wrap gap-1">
+                    {songs.map((song) => {
+                        const songId = song.id || song._id;
+                        return (
+                            <li
+                                key={songId}
+                                className="border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white"
+                            >
+                                <div className="flex-1">
+                                    <Link
+                                        to={`/songs/${songId}`}
+                                        className="font-medium text-blue-600 hover:underline"
+                                    >
+                                        {song.title}
+                                    </Link>
+                                    <p className="text-xs text-gray-500">
+                                        {song.artist} · 난이도 {song.level}
+                                    </p>
+                                    {song.tags && song.tags.length > 0 && (
+                                        <div className="mt-1 flex flex-wrap gap-1">
                                         {song.tags.map((tag) => (
                                             <span
                                                 key={tag}
@@ -248,8 +258,9 @@ function PracticeSongSection({ instrumentId }) {
                                     </a>
                                 )}
                             </div>
-                        </li>
-                    ))}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
         </section>
