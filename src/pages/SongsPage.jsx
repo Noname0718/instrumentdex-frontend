@@ -18,6 +18,7 @@ export default function SongsPage() {
   const [instrumentFilter, setInstrumentFilter] = useState(instrumentFromQuery);
   const [levelFilter, setLevelFilter] = useState("ALL");
   const [sortOption, setSortOption] = useState("TITLE_ASC");
+  const [keyword, setKeyword] = useState("");
 
   const songsQuery = useQuery({
     queryKey: ["songs"],
@@ -61,7 +62,21 @@ export default function SongsPage() {
         String(song.instrumentId) === instrumentFilter;
       const levelMatch =
         levelFilter === "ALL" || song.level === levelFilter;
-      return instrumentMatch && levelMatch;
+      const normalizedKeyword = keyword.trim().toLowerCase();
+      const keywordMatch =
+        normalizedKeyword === "" ||
+        [
+          song.title,
+          song.artist,
+          song.description,
+          song.instrumentName,
+          song.mainInstrument,
+          song.instrument?.nameKo,
+          song.instrument?.nameEn,
+        ]
+          .filter(Boolean)
+          .some((field) => field.toLowerCase().includes(normalizedKeyword));
+      return instrumentMatch && levelMatch && keywordMatch;
     });
 
     return filtered.sort((a, b) => {
@@ -84,10 +99,12 @@ export default function SongsPage() {
       }
       return 0;
     });
-  }, [songs, instrumentFilter, levelFilter, sortOption]);
+  }, [songs, instrumentFilter, levelFilter, keyword, sortOption]);
 
   const appliedFilterCount =
-    (instrumentFilter !== "ALL" ? 1 : 0) + (levelFilter !== "ALL" ? 1 : 0);
+    (instrumentFilter !== "ALL" ? 1 : 0) +
+    (levelFilter !== "ALL" ? 1 : 0) +
+    (keyword.trim() ? 1 : 0);
 
   if (songsQuery.isLoading) {
     return <div className="p-4">연습곡 불러오는 중...</div>;
@@ -115,6 +132,16 @@ export default function SongsPage() {
       </div>
 
       <div className="flex flex-wrap gap-4 items-center text-sm bg-white border rounded-xl p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-gray-700">검색</span>
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="제목, 아티스트 검색"
+            className="w-48 rounded border px-3 py-1.5 text-sm"
+          />
+        </div>
         <div className="flex items-center gap-2">
           <span className="font-semibold text-gray-700">악기</span>
           <select
@@ -168,6 +195,7 @@ export default function SongsPage() {
             onClick={() => {
               setInstrumentFilter("ALL");
               setLevelFilter("ALL");
+              setKeyword("");
             }}
             className="ml-auto text-xs px-3 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50"
           >
