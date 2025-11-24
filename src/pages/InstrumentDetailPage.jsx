@@ -2,7 +2,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchInstrumentDetail } from "../api/instrumentApi";
-import { fetchSongsByInstrument } from "../api/songs";
+import { fetchSongs } from "../api/songs";
+import SongCard from "../components/SongCard";
 
 export default function InstrumentDetailPage() {
     const { id } = useParams();
@@ -146,26 +147,26 @@ export default function InstrumentDetailPage() {
                     </div>
 
                     {/* 5-3. 연습곡 섹션은 아래에서 추가 */}
-                    <PracticeSongSection instrumentId={instrument.id} />
+                    <InstrumentSongSection instrumentId={instrument.id} />
                 </>
             )}
         </div>
     );
 }
 
-function PracticeSongSection({ instrumentId }) {
+function InstrumentSongSection({ instrumentId }) {
     const { data, isLoading, isError, error, refetch } = useQuery({
         enabled: !!instrumentId,
-        queryKey: ["songs", { instrumentId }],
-        queryFn: () => fetchSongsByInstrument(instrumentId),
+        queryKey: ["songs", instrumentId],
+        queryFn: () => fetchSongs({ instrumentId }),
     });
 
-    const songs = data || [];
+    const songs = data ?? [];
 
     return (
         <section className="mt-8 space-y-4">
             <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">이 악기 연습곡</h2>
+                <h2 className="text-lg font-semibold">이 악기로 연주할 수 있는 곡</h2>
                 <button
                     type="button"
                     onClick={() => refetch()}
@@ -175,22 +176,7 @@ function PracticeSongSection({ instrumentId }) {
                 </button>
             </div>
 
-            {isLoading && (
-                <div className="space-y-2">
-                    {[...Array(3)].map((_, idx) => (
-                        <div
-                            key={idx}
-                            className="border rounded-lg p-3 flex justify-between items-center animate-pulse"
-                        >
-                            <div className="space-y-2 w-2/3">
-                                <div className="h-4 bg-gray-200 rounded w-1/2" />
-                                <div className="h-3 bg-gray-200 rounded w-1/3" />
-                            </div>
-                            <div className="h-5 w-20 bg-gray-200 rounded" />
-                        </div>
-                    ))}
-                </div>
-            )}
+            {isLoading && <p>연습곡을 불러오는 중입니다...</p>}
 
             {isError && !isLoading && (
                 <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md space-y-1 text-sm">
@@ -200,68 +186,15 @@ function PracticeSongSection({ instrumentId }) {
             )}
 
             {!isLoading && !isError && songs.length === 0 && (
-                <p className="text-sm text-gray-500">아직 이 악기에 등록된 연습곡이 없습니다.</p>
+                <p className="text-sm text-gray-500">아직 이 악기에 등록된 곡이 없습니다.</p>
             )}
 
             {!isLoading && !isError && songs.length > 0 && (
-                <ul className="space-y-2">
-                    {songs.map((song) => {
-                        const songId = song.id || song._id;
-                        return (
-                            <li
-                                key={songId}
-                                className="border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white"
-                            >
-                                <div className="flex-1">
-                                    <Link
-                                        to={`/songs/${songId}`}
-                                        className="font-medium text-blue-600 hover:underline"
-                                    >
-                                        {song.title}
-                                    </Link>
-                                    <p className="text-xs text-gray-500">
-                                        {song.artist} · 난이도 {song.level}
-                                    </p>
-                                    {song.tags && song.tags.length > 0 && (
-                                        <div className="mt-1 flex flex-wrap gap-1">
-                                        {song.tags.map((tag) => (
-                                            <span
-                                                key={tag}
-                                                className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600"
-                                            >
-                                                #{tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex gap-2">
-                                {song.youtubeUrl && (
-                                    <a
-                                        href={song.youtubeUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-xs px-3 py-1.5 rounded-md border hover:bg-gray-50"
-                                    >
-                                        유튜브
-                                    </a>
-                                )}
-                                {song.sheetUrl && (
-                                    <a
-                                        href={song.sheetUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-xs px-3 py-1.5 rounded-md border hover:bg-gray-50"
-                                    >
-                                        악보
-                                    </a>
-                                )}
-                            </div>
-                            </li>
-                        );
-                    })}
-                </ul>
+                <div className="grid gap-4 md:grid-cols-2">
+                    {songs.map((song) => (
+                        <SongCard key={song.id} song={song} instrumentId={instrumentId} />
+                    ))}
+                </div>
             )}
         </section>
     );
