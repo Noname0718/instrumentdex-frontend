@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchInstrumentDetail } from "../api/instrumentApi";
 import { fetchSongs } from "../api/songs";
 import SongCard from "../components/SongCard";
+import InstrumentImage from "../components/InstrumentImage";
 
 export default function InstrumentDetailPage() {
     const { id } = useParams();
@@ -110,17 +111,11 @@ export default function InstrumentDetailPage() {
                         <aside className="space-y-4">
                             <div className="border rounded-xl overflow-hidden bg-white">
                                 <div className="aspect-video bg-gray-100">
-                                    {instrument.imageUrl ? (
-                                        <img
-                                            src={instrument.imageUrl}
-                                            alt={instrument.nameKo}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                                            이미지 없음
-                                        </div>
-                                    )}
+                                    <InstrumentImage
+                                        imageUrl={instrument.imageUrl}
+                                        alt={instrument.nameKo}
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
                                 <div className="p-4 space-y-2 text-sm">
                                     <div className="flex justify-between">
@@ -157,7 +152,7 @@ export default function InstrumentDetailPage() {
 function InstrumentSongSection({ instrumentId }) {
     const { data, isLoading, isError, error, refetch } = useQuery({
         enabled: !!instrumentId,
-        queryKey: ["songs", instrumentId],
+        queryKey: ["practice-songs", instrumentId],
         queryFn: () => fetchSongs({ instrumentId }),
     });
 
@@ -166,7 +161,7 @@ function InstrumentSongSection({ instrumentId }) {
     return (
         <section className="mt-8 space-y-4">
             <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">이 악기로 연주할 수 있는 곡</h2>
+                <h2 className="text-lg font-semibold">이 악기로 연주할 수 있는 연습곡</h2>
                 <button
                     type="button"
                     onClick={() => refetch()}
@@ -192,7 +187,7 @@ function InstrumentSongSection({ instrumentId }) {
             {!isLoading && !isError && songs.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
                     {songs.map((song) => (
-                        <SongCard key={song.id} song={song} instrumentId={instrumentId} />
+                        <SongCard key={song.id || song._id} song={song} />
                     ))}
                 </div>
             )}

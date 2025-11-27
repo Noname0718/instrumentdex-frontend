@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInstruments } from "../api/instrumentApi";
 import { Link } from "react-router-dom";
+import InstrumentImage from "../components/InstrumentImage";
 
 const FAMILY_OPTIONS = [
     { value: "ALL", label: "전체" },
@@ -164,17 +165,11 @@ export default function InstrumentsPage() {
                         >
                             {/* 이미지 영역 */}
                             <div className="aspect-video bg-gray-100 overflow-hidden">
-                                {instrument.imageUrl ? (
-                                    <img
-                                        src={instrument.imageUrl}
-                                        alt={instrument.nameKo}
-                                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                                        이미지 없음
-                                    </div>
-                                )}
+                                <InstrumentImage
+                                    imageUrl={instrument.imageUrl}
+                                    alt={instrument.nameKo}
+                                    className="w-full h-full object-cover transition-transform group-hover:scale-[1.03]"
+                                />
                             </div>
 
                             {/* 텍스트 영역 */}

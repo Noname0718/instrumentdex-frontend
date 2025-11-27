@@ -17,7 +17,7 @@ export default function SongsPage() {
   const instrumentFromQuery = searchParams.get("instrumentId") || "ALL";
 
   const [instrumentFilter, setInstrumentFilter] = useState(instrumentFromQuery);
-  const [difficultyFilter, setDifficultyFilter] = useState("ALL");
+  const [levelFilter, setLevelFilter] = useState("ALL");
   const [tagFilter, setTagFilter] = useState("");
   const [keyword, setKeyword] = useState("");
   const [sortOption, setSortOption] = useState("TITLE_ASC");
@@ -30,14 +30,14 @@ export default function SongsPage() {
     queryKey: [
       "songs",
       instrumentFilter,
-      difficultyFilter,
+      levelFilter,
       tagFilter,
       keyword,
     ],
     queryFn: () =>
       fetchSongs({
         instrumentId: instrumentFilter !== "ALL" ? instrumentFilter : undefined,
-        difficulty: difficultyFilter !== "ALL" ? difficultyFilter : undefined,
+        level: levelFilter !== "ALL" ? levelFilter : undefined,
         tag: tagFilter.trim() || undefined,
         q: keyword.trim() || undefined,
       }),
@@ -54,25 +54,33 @@ export default function SongsPage() {
 
   const availableInstruments = useMemo(() => {
     if (instruments.length > 0) {
-      return instruments.map((instrument) => ({
-        value: instrument.id,
-        label: instrument.nameKo || instrument.nameEn || instrument.id,
-      }));
+      return instruments.map((instrument) => {
+        const value = instrument.id ?? instrument._id;
+        return {
+          value,
+          label: instrument.nameKo || instrument.nameEn || value,
+        };
+      });
     }
 
-    const fallback = new Map();
-    songs.forEach((song) => {
-      song.sections?.forEach((section) => {
-        if (!fallback.has(section.instrumentId)) {
-          fallback.set(section.instrumentId, section.instrumentId);
-        }
-      });
-    });
-    return Array.from(fallback.keys()).map((value) => ({
+    const fallbackSet = new Set(
+      songs.map((song) => song.instrumentId).filter(Boolean),
+    );
+    return Array.from(fallbackSet).map((value) => ({
       value,
       label: value,
     }));
   }, [instruments, songs]);
+
+  const instrumentLabelMap = useMemo(() => {
+    const map = new Map();
+    instruments.forEach((instrument) => {
+      const key = instrument.id ?? instrument._id;
+      if (!key) return;
+      map.set(key, instrument.nameKo || instrument.nameEn || key);
+    });
+    return map;
+  }, [instruments]);
 
   const processedSongs = useMemo(() => {
     const target = [...songs];
@@ -84,8 +92,8 @@ export default function SongsPage() {
         return (b.title || "").localeCompare(a.title || "");
       }
       if (sortOption === "LEVEL_ASC" || sortOption === "LEVEL_DESC") {
-        const av = LEVEL_ORDER[a.difficulty] || 99;
-        const bv = LEVEL_ORDER[b.difficulty] || 99;
+        const av = LEVEL_ORDER[a.level] || 99;
+        const bv = LEVEL_ORDER[b.level] || 99;
         return sortOption === "LEVEL_ASC" ? av - bv : bv - av;
       }
       return 0;
@@ -94,7 +102,7 @@ export default function SongsPage() {
 
   const appliedFilterCount =
     (instrumentFilter !== "ALL" ? 1 : 0) +
-    (difficultyFilter !== "ALL" ? 1 : 0) +
+    (levelFilter !== "ALL" ? 1 : 0) +
     (tagFilter.trim() ? 1 : 0) +
     (keyword.trim() ? 1 : 0);
 
@@ -164,8 +172,8 @@ export default function SongsPage() {
           <span className="font-semibold text-gray-700">난이도</span>
           <select
             className="border rounded px-2 py-1.5 text-sm"
-            value={difficultyFilter}
-            onChange={(e) => setDifficultyFilter(e.target.value)}
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
           >
             <option value="ALL">전체</option>
             <option value="BEGINNER">BEGINNER</option>
@@ -195,7 +203,7 @@ export default function SongsPage() {
             type="button"
             onClick={() => {
               setInstrumentFilter("ALL");
-              setDifficultyFilter("ALL");
+              setLevelFilter("ALL");
               setTagFilter("");
               setKeyword("");
             }}
@@ -213,22 +221,19 @@ export default function SongsPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {processedSongs.map((song) => {
-          const filteredSections =
-            instrumentFilter !== "ALL"
-              ? song.sections?.filter(
-                  (section) => section.instrumentId === instrumentFilter
-                )
-              : song.sections;
+          const songId = song.id || song._id;
+          const instrumentName =
+            instrumentLabelMap.get(song.instrumentId) || song.instrumentId || "미지정";
 
           return (
             <div
-              key={song.id}
+              key={songId}
               className="border rounded-lg p-4 shadow-sm bg-white flex flex-col gap-3"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
                   <Link
-                    to={`/songs/${song.id}`}
+                    to={`/songs/${songId}`}
                     className="text-lg font-semibold text-blue-600 hover:underline"
                   >
                     {song.title}
@@ -236,13 +241,29 @@ export default function SongsPage() {
                   {song.artist && (
                     <p className="text-sm text-gray-600">{song.artist}</p>
                   )}
+                  <p className="text-xs text-gray-500">
+                    악기:{" "}
+                    <span className="font-medium text-gray-700">
+                      {instrumentName}
+                    </span>
+                  </p>
                 </div>
-                {song.difficulty && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                    난이도 {song.difficulty}
-                  </span>
-                )}
+                <div className="text-right space-y-1 text-xs text-gray-500">
+                  {song.level && (
+                    <span className="inline-flex px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                      난이도 {song.level}
+                    </span>
+                  )}
+                  {song.bpm && <p>{song.bpm} BPM</p>}
+                  {song.key && <p>Key {song.key}</p>}
+                </div>
               </div>
+
+              {song.description && (
+                <p className="text-sm text-gray-600 line-clamp-3">
+                  {song.description}
+                </p>
+              )}
 
               {song.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1 text-xs text-blue-600">
@@ -257,51 +278,20 @@ export default function SongsPage() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                {filteredSections?.map((section, idx) => (
-                  <div
-                    key={`${section.instrumentId}-${idx}`}
-                    className="border rounded-md p-2 bg-gray-50 flex items-center justify-between"
-                  >
-                    <div className="text-sm">
-                      <div className="font-medium">
-                        역할: {section.role ?? "파트"}
-                      </div>
-                      {section.level && (
-                        <div className="text-xs text-gray-600">
-                          파트 난이도: {section.level}
-                        </div>
-                      )}
-                      {section.note && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {section.note}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      {section.youtubeUrl && (
-                        <a
-                          href={section.youtubeUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs px-3 py-1 border rounded-full hover:bg-gray-200"
-                        >
-                          연주 영상
-                        </a>
-                      )}
-                      {section.sheetUrl && (
-                        <a
-                          href={section.sheetUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs px-3 py-1 border rounded-full hover:bg-gray-200"
-                        >
-                          악보
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                <span className="px-2 py-0.5 rounded-full bg-gray-100">
+                  코드: {song.instrumentId || "미지정"}
+                </span>
+                {song.bpm && (
+                  <span className="px-2 py-0.5 rounded-full bg-gray-100">
+                    {song.bpm} BPM
+                  </span>
+                )}
+                {song.key && (
+                  <span className="px-2 py-0.5 rounded-full bg-gray-100">
+                    Key {song.key}
+                  </span>
+                )}
               </div>
             </div>
           );

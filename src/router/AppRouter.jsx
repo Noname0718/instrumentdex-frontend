@@ -4,6 +4,9 @@ import InstrumentDetailPage from "../pages/InstrumentDetailPage";
 import SongsPage from "../pages/SongsPage";
 import SongDetailPage from "../pages/SongDetailPage";
 import Navbar from "../components/Navbar";
+import AdminLayout from "../pages/admin/AdminLayout";
+import AdminInstrumentsPage from "../pages/admin/AdminInstrumentsPage";
+import AdminSongsPage from "../pages/admin/AdminSongsPage";
 
 export default function AppRouter() {
   return (
@@ -24,6 +27,11 @@ export default function AppRouter() {
                 <Route path="/instruments/:id" element={<InstrumentDetailPage />} />
                 <Route path="/songs" element={<SongsPage />} />
                 <Route path="/songs/:id" element={<SongDetailPage />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminInstrumentsPage />} />
+                  <Route path="instruments" element={<AdminInstrumentsPage />} />
+                  <Route path="songs" element={<AdminSongsPage />} />
+                </Route>
               </Routes>
             </div>
           </main>
